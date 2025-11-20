@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher's Smart Age Calculator</title>
+    
+    <!-- Tailwind CSS (Modern UI) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts (English + Urdu) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- PDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5', // Indigo 600
+                        secondary: '#10B981', // Emerald 500
+                        darkBg: '#0F172A',
+                        cardDark: '#1E293B'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        urdu: ['Noto Nastaliq Urdu', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .urdu-text { font-family: 'Noto Nastaliq Urdu', serif; line-height: 1.8; }
+        
+        /* Animation classes */
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 min-h-screen flex flex-col">
+
+    <!-- Admin Message Banner -->
+    <div id="adminBanner" class="bg-gradient-to-r from-primary to-purple-600 text-white px-4 py-3 shadow-lg relative">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-bullhorn animate-pulse"></i>
+                <span class="font-medium text-sm md:text-base" id="bannerText">
+                    [Asad Khaskheli ko vote do. Asad is best Teacher]
+                </span>
+            </div>
+            <button onclick="closeBanner()" class="text-white hover:text-gray-200"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="px-4 py-4 shadow-sm bg-white dark:bg-cardDark sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl">T</div>
+                <h1 class="text-xl font-bold tracking-tight hidden md:block" data-key="appTitle">Teacher's Age Mate</h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Language Toggle -->
+                <button onclick="toggleLang()" class="px-3 py-1 rounded-full border border-gray-300 dark:border-gray-600 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <span id="langLabel">اردو</span>
+                </button>
+                
+                <!-- Theme Toggle -->
+                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-yellow-400 transition">
+                    <i id="themeIcon" class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-6 max-w-2xl">
+        
+        <!-- Navigation Tabs -->
+        <div class="grid grid-cols-4 gap-2 mb-6 bg-white dark:bg-cardDark p-2 rounded-xl shadow-sm">
+            <button onclick="switchTab('age')" id="btn-age" class="tab-btn active-tab py-2 rounded-lg text-sm font-medium text-primary bg-indigo-50 dark:bg-indigo-900/30"><i class="fas fa-calculator mb-1 block sm:inline sm:mr-1"></i> <span data-key="tabAge">Age</span></button>
+            <button onclick="switchTab('future')" id="btn-future" class="tab-btn py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-hourglass-half mb-1 block sm:inline sm:mr-1"></i> <span data-key="tabFuture">Future</span></button>
+            <button onclick="switchTab('diff')" id="btn-diff" class="tab-btn py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-user-group mb-1 block sm:inline sm:mr-1"></i> <span data-key="tabDiff">Diff</span></button>
+            <button onclick="switchTab('saved')" id="btn-saved" class="tab-btn py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700"><i class="fas fa-save mb-1 block sm:inline sm:mr-1"></i> <span data-key="tabSaved">Saved</span></button>
+        </div>
+
+        <!-- 1. Standard Age Calculator -->
+        <section id="tab-age" class="tab-content fade-in">
+            <div class="bg-white dark:bg-cardDark rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-primary">
+                    <i class="fas fa-birthday-cake"></i> <span data-key="calcAgeTitle">Calculate Age</span>
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-500" data-key="dobLabel">Date of Birth</label>
+                        <input type="date" id="dobInput" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:outline-none transition">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-500" data-key="todayLabel">Today's Date</label>
+                        <input type="date" id="todayInput" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-primary focus:outline-none transition">
+                    </div>
+
+                    <button onclick="calculateAge()" class="w-full bg-primary hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-md transition transform active:scale-95 flex justify-center items-center gap-2">
+                        <i class="fas fa-calculator"></i> <span data-key="btnCalc">Calculate</span>
+                    </button>
+                </div>
+
+                <!-- Result Display -->
+                <div id="ageResult" class="hidden mt-6 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500 dark:text-gray-400" data-key="ageIs">You are</p>
+                        <div class="text-3xl font-bold text-primary my-1" id="resString">0 Years</div>
+                        <p class="text-xs text-gray-400" id="resFullDetails">0 Months, 0 Days</p>
+                    </div>
+                    
+                    <div class="flex justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button onclick="saveProfile()" class="text-sm text-secondary font-medium hover:underline flex items-center gap-1"><i class="fas fa-save"></i> <span data-key="btnSave">Save</span></button>
+                        <button onclick="exportPDF('ageResult')" class="text-sm text-red-500 font-medium hover:underline flex items-center gap-1"><i class="fas fa-file-pdf"></i> <span data-key="btnPdf">PDF</span></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Future Age -->
+        <section id="tab-future" class="tab-content hidden fade-in">
+            <div class="bg-white dark:bg-cardDark rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-secondary">
+                    <i class="fas fa-clock"></i> <span data-key="futureTitle">Future Age</span>
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-500" data-key="dobLabel">Date of Birth</label>
+                        <input type="date" id="futureDob" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-500" data-key="targetDate">Target Date</label>
+                        <input type="date" id="futureTarget" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                    </div>
+                    <button onclick="calcFuture()" class="w-full bg-secondary hover:bg-emerald-600 text-white font-bold py-3 rounded-lg shadow-md transition active:scale-95">
+                        <span data-key="btnCalc">Calculate</span>
+                    </button>
+                </div>
+                <div id="futureResult" class="hidden mt-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-center">
+                    <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400" id="futureResText"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Age Difference -->
+        <section id="tab-diff" class="tab-content hidden fade-in">
+            <div class="bg-white dark:bg-cardDark rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-purple-500">
+                    <i class="fas fa-exchange-alt"></i> <span data-key="diffTitle">Age Difference</span>
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-500" data-key="p1Dob">Person 1 DOB</label>
+                        <input type="date" id="diffDob1" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-gray-500" data-key="p2Dob">Person 2 DOB</label>
+                        <input type="date" id="diffDob2" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                    </div>
+                    <button onclick="calcDiff()" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 rounded-lg shadow-md transition active:scale-95">
+                        <span data-key="btnCalc">Calculate</span>
+                    </button>
+                </div>
+                <div id="diffResult" class="hidden mt-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl text-center">
+                    <p class="text-lg font-bold text-purple-600 dark:text-purple-400" id="diffResText"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Saved Profiles -->
+        <section id="tab-saved" class="tab-content hidden fade-in">
+            <div class="bg-white dark:bg-cardDark rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-orange-500">
+                    <i class="fas fa-address-book"></i> <span data-key="savedTitle">Saved Profiles</span>
+                </h2>
+                
+                <div id="savedList" class="space-y-3">
+                    <!-- Profiles will be injected here -->
+                    <p class="text-gray-400 text-center py-4" data-key="noProfiles">No profiles saved yet.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Initialization ---
+        const { jsPDF } = window.jspdf;
+        
+        // Set Default Date to Today
+        document.getElementById('todayInput').valueAsDate = new Date();
+
+        // --- Multi-language Support ---
+        let currentLang = 'en';
+        const translations = {
+            en: {
+                appTitle: "Teacher's Age Mate",
+                tabAge: "Age",
+                tabFuture: "Future",
+                tabDiff: "Diff",
+                tabSaved: "Saved",
+                calcAgeTitle: "Calculate Age",
+                dobLabel: "Date of Birth",
+                todayLabel: "Today's Date",
+                btnCalc: "Calculate",
+                ageIs: "Age is:",
+                btnSave: "Save Profile",
+                btnPdf: "Export PDF",
+                futureTitle: "Future Age Calculator",
+                targetDate: "Target Date (Future)",
+                diffTitle: "Student Age Comparison",
+                p1Dob: "Student 1 DOB",
+                p2Dob: "Student 2 DOB",
+                savedTitle: "Student Records",
+                noProfiles: "No profiles saved.",
+                years: "Years",
+                months: "Months",
+                days: "Days",
+                promptName: "Enter Student Name:",
+                bannerText: "[Asad Khaskheli ko vote do. Asad is best Teacher]"
+            },
+            ur: {
+                appTitle: "اساتذہ کا عمر ساتھی",
+                tabAge: "عمر",
+                tabFuture: "مستقبل",
+                tabDiff: "فرق",
+                tabSaved: "ریکارڈ",
+                calcAgeTitle: "عمر کا حساب لگائیں",
+                dobLabel: "تاریخ پیدائش",
+                todayLabel: "آج کی تاریخ",
+                btnCalc: "حساب لگائیں",
+                ageIs: "کل عمر:",
+                btnSave: "محفوظ کریں",
+                btnPdf: "پی ڈی ایف",
+                futureTitle: "مستقبل کی عمر",
+                targetDate: "مطلوبہ تاریخ (مستقبل)",
+                diffTitle: "طلباء کی عمر کا موازنہ",
+                p1Dob: "طالب علم 1 کی تاریخ پیدائش",
+                p2Dob: "طالب علم 2 کی تاریخ پیدائش",
+                savedTitle: "محفوظ ریکارڈ",
+                noProfiles: "کوئی ریکارڈ موجود نہیں۔",
+                years: "سال",
+                months: "مہینے",
+                days: "دن",
+                promptName: "طالب علم کا نام درج کریں:",
+                bannerText: "[Asad Khaskheli ko vote do. Asad is best Teacher]"
+            }
+        };
+
+        function toggleLang() {
+            currentLang = currentLang === 'en' ? 'ur' : 'en';
+            document.getElementById('langLabel').innerText = currentLang === 'en' ? 'اردو' : 'English';
+            
+            // RTL handling
+            if(currentLang === 'ur') {
+                document.documentElement.setAttribute('dir', 'rtl');
+                document.body.classList.add('urdu-text');
+            } else {
+                document.documentElement.setAttribute('dir', 'ltr');
+                document.body.classList.remove('urdu-text');
+            }
+            
+            updateText();
+        }
+
+        function updateText() {
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if(translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
+            // Banner text remains specific unless translated explicitly
+            document.getElementById('bannerText').innerText = translations[currentLang].bannerText;
+        }
+
+        // --- Theme Toggle ---
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+                icon.classList.remove('text-yellow-400');
+            } else {
+                html.classList.add('dark');
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+                icon.classList.add('text-yellow-400');
+            }
+        }
+
+        // --- Tabs Logic ---
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Show selected
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            
+            // Update Buttons styling
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-primary', 'bg-indigo-50', 'dark:bg-indigo-900/30');
+                btn.classList.add('text-gray-500', 'dark:text-gray-400');
+            });
+            
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.remove('text-gray-500', 'dark:text-gray-400');
+            activeBtn.classList.add('text-primary', 'bg-indigo-50', 'dark:bg-indigo-900/30');
+
+            if(tabId === 'saved') loadProfiles();
+        }
+
+        // --- Core Calculation Logic ---
+        function getAgeObject(start, end) {
+            let years = end.getFullYear() - start.getFullYear();
+            let months = end.getMonth() - start.getMonth();
+            let days = end.getDate() - start.getDate();
+
+            if (days < 0) {
+                months--;
+                // Get days in previous month
+                let prevMonthDate = new Date(end.getFullYear(), end.getMonth(), 0);
+                days += prevMonthDate.getDate();
+            }
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            return { years, months, days };
+        }
+
+        function calculateAge() {
+            const dob = new Date(document.getElementById('dobInput').value);
+            const target = new Date(document.getElementById('todayInput').value);
+
+            if (isNaN(dob)) return alert("Please select Date of Birth");
+
+            const age = getAgeObject(dob, target);
+            
+            const resDiv = document.getElementById('ageResult');
+            const t = translations[currentLang];
+            
+            document.getElementById('resString').innerText = `${age.years} ${t.years}`;
+            document.getElementById('resFullDetails').innerText = `${age.months} ${t.months}, ${age.days} ${t.days}`;
+            
+            resDiv.classList.remove('hidden');
+        }
+
+        function calcFuture() {
+            const dob = new Date(document.getElementById('futureDob').value);
+            const target = new Date(document.getElementById('futureTarget').value);
+            
+            if (isNaN(dob) || isNaN(target)) return;
+
+            const age = getAgeObject(dob, target);
+            const t = translations[currentLang];
+            
+            const el = document.getElementById('futureResult');
+            document.getElementById('futureResText').innerText = 
+                `${age.years} ${t.years}, ${age.months} ${t.months}, ${age.days} ${t.days}`;
+            el.classList.remove('hidden');
+        }
+
+        function calcDiff() {
+            const d1 = new Date(document.getElementById('diffDob1').value);
+            const d2 = new Date(document.getElementById('diffDob2').value);
+            
+            if (isNaN(d1) || isNaN(d2)) return;
+
+            // Calculate difference by treating older date as start
+            let start = d1 < d2 ? d1 : d2;
+            let end = d1 < d2 ? d2 : d1;
+            
+            const diff = getAgeObject(start, end);
+            const t = translations[currentLang];
+
+            const el = document.getElementById('diffResult');
+            document.getElementById('diffResText').innerText = 
+                `${t.diffTitle}: ${diff.years} ${t.years}, ${diff.months} ${t.months}, ${diff.days} ${t.days}`;
+            el.classList.remove('hidden');
+        }
+
+        // --- Profiles & Storage ---
+        function saveProfile() {
+            const dobVal = document.getElementById('dobInput').value;
+            if(!dobVal) return;
+            
+            const name = prompt(translations[currentLang].promptName);
+            if(!name) return;
+
+            const profiles = JSON.parse(localStorage.getItem('teacherAgeApp_profiles') || '[]');
+            profiles.push({ name, dob: dobVal, id: Date.now() });
+            localStorage.setItem('teacherAgeApp_profiles', JSON.stringify(profiles));
+            
+            alert("Saved!");
+            switchTab('saved'); // Go to saved tab
+        }
+
+        function loadProfiles() {
+            const list = document.getElementById('savedList');
+            const profiles = JSON.parse(localStorage.getItem('teacherAgeApp_profiles') || '[]');
+            
+            if(profiles.length === 0) {
+                list.innerHTML = `<p class="text-gray-400 text-center">${translations[currentLang].noProfiles}</p>`;
+                return;
+            }
+
+            list.innerHTML = profiles.map(p => {
+                // Calculate current age for display
+                const age = getAgeObject(new Date(p.dob), new Date());
+                return `
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg flex justify-between items-center border-l-4 border-primary shadow-sm">
+                    <div>
+                        <h3 class="font-bold text-gray-800 dark:text-white">${p.name}</h3>
+                        <p class="text-xs text-gray-500">${age.years} Y, ${age.months} M (${p.dob})</p>
+                    </div>
+                    <button onclick="deleteProfile(${p.id})" class="text-red-400 hover:text-red-600 p-2"><i class="fas fa-trash"></i></button>
+                </div>`;
+            }).join('');
+        }
+
+        function deleteProfile(id) {
+            let profiles = JSON.parse(localStorage.getItem('teacherAgeApp_profiles') || '[]');
+            profiles = profiles.filter(p => p.id !== id);
+            localStorage.setItem('teacherAgeApp_profiles', JSON.stringify(profiles));
+            loadProfiles();
+        }
+
+        // --- PDF Export ---
+        function exportPDF() {
+            const doc = new jsPDF();
+            const t = translations[currentLang];
+            const ageStr = document.getElementById('resString').innerText;
+            const detailStr = document.getElementById('resFullDetails').innerText;
+            const dob = document.getElementById('dobInput').value;
+
+            doc.setFontSize(20);
+            doc.text("Teacher's Age Mate Report", 20, 20);
+            
+            doc.setFontSize(12);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 30);
+            
+            doc.setLineWidth(0.5);
+            doc.line(20, 35, 190, 35);
+
+            doc.setFontSize(14);
+            doc.text(`Date of Birth: ${dob}`, 20, 50);
+            doc.text(`Calculated Age:`, 20, 60);
+            
+            doc.setFontSize(18);
+            doc.setTextColor(0, 0, 255);
+            doc.text(ageStr, 20, 70);
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text(detailStr, 20, 78);
+            
+            doc.setTextColor(150);
+            doc.setFontSize(10);
+            doc.text("Note: Leap years calculated automatically.", 20, 100);
+            doc.text(document.getElementById('bannerText').innerText, 20, 110);
+
+            doc.save("age-result.pdf");
+        }
+
+        // --- Banner Logic ---
+        function closeBanner() {
+            document.getElementById('adminBanner').style.display = 'none';
+        }
+
+        // Initialize Text
+        updateText();
+
+    </script>
+</body>
+</html>
